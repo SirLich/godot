@@ -53,7 +53,11 @@ class DirectoryCreateDialog;
 class EditorResourceTooltipPlugin;
 
 class FileSystemTree : public Tree {
+	GDCLASS(FileSystemTree, Tree);
 	virtual Control *make_custom_tooltip(const String &p_text) const;
+
+protected:
+	void _notification(int p_notification);
 };
 
 class FileSystemList : public ItemList {

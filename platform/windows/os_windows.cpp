@@ -55,6 +55,7 @@
 #include <process.h>
 #include <psapi.h>
 #include <regstr.h>
+#include <shellapi.h>
 #include <shlobj.h>
 #include <wbemcli.h>
 #include <wincrypt.h>
@@ -1814,6 +1815,14 @@ OS_Windows::OS_Windows(HINSTANCE _hInstance) {
 
 	CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
+	// // pass the handle to the Form in the constructor
+	// // so TDropTarget knows who to send the WM_OLEDROP
+	// // message to
+	// lpDropTarget = (LPDROPTARGET) new TDropTarget(Handle);
+	// CoLockObjectExternal(lpDropTarget, true, true);
+
+	// // register the Memo as a drop target
+
 #ifdef WASAPI_ENABLED
 	AudioDriverManager::add_driver(&driver_wasapi);
 #endif
@@ -1842,4 +1851,165 @@ OS_Windows::OS_Windows(HINSTANCE _hInstance) {
 
 OS_Windows::~OS_Windows() {
 	CoUninitialize();
+
+	// // remove the Memo from the list of drop targets
+	// // RevokeDragDrop(Memo1->Handle);
+	// lpDropTarget->Release();
+	// CoLockObjectExternal(lpDropTarget, false, true);
+
+	// // uninitialize the OLE library
+	// OleUninitialize();
 }
+
+// //---------------------------------------------------------------------------
+// __fastcall TDropTarget::TDropTarget(HWND HForm) :
+// 		IDropTarget() {
+// 	FFormHandle = HForm; // handle to your Form passed in the ctor
+// 	FReferences = 1;
+// 	FAcceptFormat = false;
+// }
+// //---------------------------------------------------------------------------
+
+// __fastcall TDropTarget::~TDropTarget() {
+// }
+// //---------------------------------------------------------------------------
+
+// // helper routine to notify Form of drop on target
+// void __fastcall TDropTarget::HandleDrop(HDROP HDrop) {
+// 	SendMessage(FFormHandle, WM_OLEDROP, (WPARAM)HDrop, 0);
+// }
+// //---------------------------------------------------------------------------
+
+// // IUnknown Interface has three member functions:
+// // QueryInterface, AddRef, and Release.
+
+// STDMETHODIMP TDropTarget::QueryInterface(REFIID iid, void FAR *FAR *ppv) {
+// 	// tell other objects about our capabilities
+// 	if (iid == IID_IUnknown || iid == IID_IDropTarget) {
+// 		*ppv = this;
+// 		AddRef();
+// 		return NOERROR;
+// 	}
+// 	*ppv = NULL;
+// 	return ResultFromScode(E_NOINTERFACE);
+// }
+// //---------------------------------------------------------------------------
+
+// STDMETHODIMP_(ULONG)
+// TDropTarget::AddRef() {
+// 	return ++FReferences;
+// }
+// //---------------------------------------------------------------------------
+
+// STDMETHODIMP_(ULONG)
+// TDropTarget::Release() {
+// 	if (--FReferences == 0) {
+// 		delete this;
+// 		return 0;
+// 	}
+// 	return FReferences;
+// }
+// ---------------------------------------------------------------------------
+
+// IDropTarget Interface handles the Drag and Drop
+// implementation
+
+// Drag Enter is called first
+// STDMETHODIMP TDropTarget::DragEnter(LPDATAOBJECT pDataObj, DWORD grfKeyState,
+// 		POINTL pt, LPDWORD pdwEffect) {
+// 	FORMATETC fmtetc;
+
+// 	fmtetc.cfFormat = CF_HDROP;
+// 	fmtetc.ptd = NULL;
+// 	fmtetc.dwAspect = DVASPECT_CONTENT;
+// 	fmtetc.lindex = -1;
+// 	fmtetc.tymed = TYMED_HGLOBAL;
+
+// 	// does the drag source provide CF_HDROP,
+// 	// which is the only format we accept
+// 	if (pDataObj->QueryGetData(&fmtetc) == NOERROR)
+// 		FAcceptFormat = true;
+// 	else
+// 		FAcceptFormat = false;
+
+// 	return NOERROR;
+// }
+// //---------------------------------------------------------------------------
+
+// // implement visual feedback if required
+// STDMETHODIMP TDropTarget::DragOver(DWORD grfKeyState, POINTL pt,
+// 		LPDWORD pdwEffect) {
+// 	return NOERROR;
+// }
+// //---------------------------------------------------------------------------
+
+// // remove visual feedback
+// STDMETHODIMP TDropTarget::DragLeave() {
+// 	FAcceptFormat = false;
+// 	return NOERROR;
+// }
+// //---------------------------------------------------------------------------
+
+// // source has sent the DRAGDROP_DROP message indicating
+// // a drop has a occurred
+// STDMETHODIMP TDropTarget::Drop(LPDATAOBJECT pDataObj, DWORD grfKeyState,
+// 		POINTL pt, LPDWORD pdwEffect) {
+// 	FORMATETC fmtetc;
+// 	fmtetc.cfFormat = CF_HDROP;
+// 	fmtetc.ptd = NULL;
+// 	fmtetc.dwAspect = DVASPECT_CONTENT;
+// 	fmtetc.lindex = -1;
+// 	fmtetc.tymed = TYMED_HGLOBAL;
+
+// 	// user has dropped on us -- get the CF_HDROP data from drag source
+// 	STGMEDIUM medium;
+// 	HRESULT hr = pDataObj->GetData(&fmtetc, &medium);
+
+// 	if (!FAILED(hr)) {
+// 		// grab a pointer to the data
+// 		HGLOBAL HFiles = medium.hGlobal;
+// 		HDROP HDrop = (HDROP)GlobalLock(HFiles);
+
+// 		// call the helper routine which will notify the Form
+// 		// of the drop
+// 		HandleDrop(HDrop);
+
+// 		// release the pointer to the memory
+// 		GlobalUnlock(HFiles);
+// 		ReleaseStgMedium(&medium);
+// 	} else {
+// 		*pdwEffect = DROPEFFECT_NONE;
+// 		return hr;
+// 	}
+// 	return NOERROR;
+// }
+// //---------------------------------------------------------------------------
+
+// void OS_Windows::WMOleDrop(TMessage &Msg) {
+// 	// find the number of files dropped
+// 	int num_files = DragQueryFile((HDROP)Msg.WParam, 0xFFFFFFFF,
+// 			(LPSTR)NULL, NULL);
+
+// 	if (num_files != 1) {
+// 		ShowMessage("too many files!");
+// 		Msg.Result = 0;
+// 		return;
+// 	}
+
+// 	// find the length of the filename
+// 	int NameLength = DragQueryFile((HDROP)Msg.WParam, 0,
+// 							 NULL, NULL) +
+// 			1;
+
+// 	// get the filename
+// 	char *FileName = new char[NameLength];
+// 	DragQueryFile((HDROP)Msg.WParam, 0, FileName, NameLength);
+
+// 	// load the file
+// 	// Memo1->Lines->LoadFromFile(FileName);
+
+// 	delete[] FileName;
+
+// 	DragFinish((HDROP)Msg.WParam);
+// 	Msg.Result = 0;
+// }

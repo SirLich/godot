@@ -2233,6 +2233,7 @@ int Tree::draw_item(const Point2i &p_pos, const Point2 &p_draw_ofs, const Size2 
 				}
 			}
 
+			// SIRLICH
 			if (drop_mode_flags && drop_mode_over) {
 				Rect2 r = cell_rect;
 				if (rtl) {

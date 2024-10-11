@@ -5465,6 +5465,9 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 
 	rendering_driver = p_rendering_driver;
 
+	// Init OLE (Object Linking and Embedding)
+	OleInitialize(NULL);
+
 	// Init TTS
 	bool tts_enabled = GLOBAL_GET("audio/general/text_to_speech");
 	if (tts_enabled) {
@@ -5785,7 +5788,9 @@ DisplayServerWindows::DisplayServerWindows(const String &p_rendering_driver, Win
 
 	r_error = OK;
 
+	// SIRLICH contains
 	static_cast<OS_Windows *>(OS::get_singleton())->set_main_window(windows[MAIN_WINDOW_ID].hWnd);
+	HRESULT hr = RegisterDragDrop(windows[MAIN_WINDOW_ID].hWnd, this);
 	Input::get_singleton()->set_event_dispatch_function(_dispatch_input_events);
 }
 
@@ -5849,6 +5854,9 @@ DisplayServerWindows::~DisplayServerWindows() {
 	touch_state.clear();
 
 	cursors_cache.clear();
+
+	// Destroy OLE
+	OleUninitialize();
 
 	// Destroy all status indicators.
 	for (HashMap<IndicatorID, IndicatorData>::Iterator E = indicators.begin(); E; ++E) {
@@ -5928,4 +5936,98 @@ DisplayServerWindows::~DisplayServerWindows() {
 	if (tts) {
 		memdelete(tts);
 	}
+}
+
+STDMETHODIMP DisplayServerWindows::QueryInterface(REFIID iid, void FAR *FAR *ppv) {
+	// tell other objects about our capabilities
+	if (iid == IID_IUnknown || iid == IID_IDropTarget) {
+		*ppv = this;
+		AddRef();
+		return NOERROR;
+	}
+	*ppv = NULL;
+	return ResultFromScode(E_NOINTERFACE);
+}
+
+STDMETHODIMP_(ULONG)
+DisplayServerWindows::AddRef() {
+	return ++FReferences;
+}
+
+STDMETHODIMP_(ULONG)
+DisplayServerWindows::Release() {
+	if (--FReferences == 0) {
+		delete this;
+		return 0;
+	}
+	return FReferences;
+}
+
+STDMETHODIMP DisplayServerWindows::DragEnter(LPDATAOBJECT pDataObj, DWORD grfKeyState,
+		POINTL pt, LPDWORD pdwEffect) {
+	FORMATETC fmtetc;
+
+	fmtetc.cfFormat = CF_HDROP;
+	fmtetc.ptd = NULL;
+	fmtetc.dwAspect = DVASPECT_CONTENT;
+	fmtetc.lindex = -1;
+	fmtetc.tymed = TYMED_HGLOBAL;
+
+	// does the drag source provide CF_HDROP,
+	// which is the only format we accept
+	if (pDataObj->QueryGetData(&fmtetc) == NOERROR)
+		FAcceptFormat = true;
+	else
+		FAcceptFormat = false;
+
+	return NOERROR;
+}
+
+// implement visual feedback if required
+STDMETHODIMP DisplayServerWindows::DragOver(DWORD grfKeyState, POINTL pt,
+		LPDWORD pdwEffect) {
+	EditorNode::get_singleton()->propagate_notification(Node::NOTIFICATION_FILE_DRAG_BEGIN);
+
+	return NOERROR;
+}
+
+// remove visual feedback
+STDMETHODIMP DisplayServerWindows::DragLeave() {
+	EditorNode::get_singleton()->propagate_notification(Node::NOTIFICATION_FILE_DRAG_END);
+	FAcceptFormat = false;
+	return NOERROR;
+}
+
+// source has sent the DRAGDROP_DROP message indicating
+// a drop has a occurred
+STDMETHODIMP DisplayServerWindows::Drop(LPDATAOBJECT pDataObj, DWORD grfKeyState,
+		POINTL pt, LPDWORD pdwEffect) {
+	FORMATETC fmtetc;
+	fmtetc.cfFormat = CF_HDROP;
+	fmtetc.ptd = NULL;
+	fmtetc.dwAspect = DVASPECT_CONTENT;
+	fmtetc.lindex = -1;
+	fmtetc.tymed = TYMED_HGLOBAL;
+
+	// user has dropped on us -- get the CF_HDROP data from drag source
+	STGMEDIUM medium;
+	HRESULT hr = pDataObj->GetData(&fmtetc, &medium);
+
+	if (!FAILED(hr)) {
+		// grab a pointer to the data
+		HGLOBAL HFiles = medium.hGlobal;
+		HDROP HDrop = (HDROP)GlobalLock(HFiles);
+
+		// call the helper routine which will notify the Form
+		// of the drop
+		// HandleDrop(HDrop);
+
+		// release the pointer to the memory
+		GlobalUnlock(HFiles);
+		ReleaseStgMedium(&medium);
+	} else {
+		*pdwEffect = DROPEFFECT_NONE;
+		return hr;
+	}
+	return NOERROR;
 }

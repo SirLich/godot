@@ -501,7 +501,6 @@ private:
 	void update_column(int p_col);
 	void update_item_cell(TreeItem *p_item, int p_col);
 	void update_item_cache(TreeItem *p_item);
-	//void draw_item_text(String p_text,const Ref<Texture2D>& p_icon,int p_icon_max_w,bool p_tool,Rect2i p_rect,const Color& p_color);
 	void draw_item_rect(TreeItem::Cell &p_cell, const Rect2i &p_rect, const Color &p_color, const Color &p_icon_color, int p_ol_size, const Color &p_ol_color);
 	int draw_item(const Point2i &p_pos, const Point2 &p_draw_ofs, const Size2 &p_draw_size, TreeItem *p_item, int &r_self_height);
 	void select_single_item(TreeItem *p_selected, TreeItem *p_current, int p_col, TreeItem *p_prev = nullptr, bool *r_in_range = nullptr, bool p_force_deselect = false);
@@ -604,7 +603,6 @@ private:
 			CLICK_NONE,
 			CLICK_TITLE,
 			CLICK_BUTTON,
-
 		};
 
 		ClickType click_type = Cache::CLICK_NONE;

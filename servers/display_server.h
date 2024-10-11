@@ -142,6 +142,7 @@ public:
 		FEATURE_NATIVE_HELP,
 		FEATURE_NATIVE_DIALOG_INPUT,
 		FEATURE_NATIVE_DIALOG_FILE,
+		FEATURE_FILE_DRAG_EVENTS
 	};
 
 	virtual bool has_feature(Feature p_feature) const = 0;

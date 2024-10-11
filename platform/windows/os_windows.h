@@ -94,7 +94,45 @@ public:
 
 class JoypadWindows;
 
+// class TDropTarget : public IDropTarget {
+// private:
+// 	unsigned long FReferences;
+// 	bool FAcceptFormat;
+// 	HWND FFormHandle;
+
+// 	// helper function
+// 	void __fastcall HandleDrop(HDROP HDrop);
+
+// protected:
+// 	// IUnknown methods
+// 	STDMETHOD(QueryInterface)
+// 	(REFIID riid, void FAR *FAR *ppvObj);
+// 	STDMETHOD_(ULONG, AddRef)
+// 	();
+// 	STDMETHOD_(ULONG, Release)
+// 	();
+
+// 	// IDropTarget methods
+// 	STDMETHOD(DragEnter)
+// 	(LPDATAOBJECT pDataObj, DWORD grfKeyState,
+// 			POINTL pt, LPDWORD pdwEffect);
+// 	STDMETHOD(DragOver)
+// 	(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffect);
+// 	STDMETHOD(DragLeave)
+// 	();
+// 	STDMETHOD(Drop)
+// 	(LPDATAOBJECT pDataObj, DWORD grfKeyState,
+// 			POINTL pt, LPDWORD pdwEffect);
+
+// public:
+// 	TDropTarget(HWND HForm);
+// 	~TDropTarget();
+// };
+
 class OS_Windows : public OS {
+	// LPDROPTARGET lpDropTarget;
+	// void WMOleDrop(TMessage &Msg);
+
 	uint64_t ticks_start = 0;
 	uint64_t ticks_per_second = 0;
 

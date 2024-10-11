@@ -42,6 +42,7 @@
 #include "drivers/unix/ip_unix.h"
 #include "drivers/wasapi/audio_driver_wasapi.h"
 #include "drivers/winmidi/midi_driver_winmidi.h"
+#include "editor/editor_node.h"
 #include "servers/audio_server.h"
 #include "servers/display_server.h"
 #include "servers/rendering/renderer_compositor.h"
@@ -296,7 +297,7 @@ typedef struct {
 	ICONDIRENTRY idEntries[1]; // An entry for each image (idCount of 'em)
 } ICONDIR, *LPICONDIR;
 
-class DisplayServerWindows : public DisplayServer {
+class DisplayServerWindows : public DisplayServer, public IDropTarget {
 	// No need to register with GDCLASS, it's platform-specific and nothing is added.
 
 	_THREAD_SAFE_CLASS_
@@ -317,6 +318,32 @@ class DisplayServerWindows : public DisplayServer {
 	static WTInfoPtr wintab_WTInfo;
 	static WTPacketPtr wintab_WTPacket;
 	static WTEnablePtr wintab_WTEnable;
+
+	// Drop State
+	unsigned long FReferences;
+	bool FAcceptFormat;
+
+	// Start IDropTarget
+	STDMETHOD(DragEnter)
+	(LPDATAOBJECT pDataObj, DWORD grfKeyState,
+			POINTL pt, LPDWORD pdwEffect);
+	STDMETHOD(DragOver)
+	(DWORD grfKeyState, POINTL pt, LPDWORD pdwEffect);
+	STDMETHOD(DragLeave)
+	();
+	STDMETHOD(Drop)
+	(LPDATAOBJECT pDataObj, DWORD grfKeyState,
+			POINTL pt, LPDWORD pdwEffect);
+	// End IDropTarget
+
+	// Start IUnknown
+	STDMETHOD(QueryInterface)
+	(REFIID riid, void FAR *FAR *ppvObj);
+	STDMETHOD_(ULONG, AddRef)
+	();
+	STDMETHOD_(ULONG, Release)
+	();
+	// End IUnknown
 
 	// Windows Ink API
 	static bool winink_available;

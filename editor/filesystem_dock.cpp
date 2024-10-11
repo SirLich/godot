@@ -72,6 +72,9 @@ Control *FileSystemTree::make_custom_tooltip(const String &p_text) const {
 	return FileSystemDock::get_singleton()->create_tooltip_for_path(item->get_metadata(0));
 }
 
+void FileSystemTree::_notification(int p_notification) {
+}
+
 Control *FileSystemList::make_custom_tooltip(const String &p_text) const {
 	int idx = get_item_at_position(get_local_mouse_position());
 	if (idx == -1) {
@@ -563,6 +566,14 @@ void FileSystemDock::_notification(int p_what) {
 			}
 		} break;
 
+		case NOTIFICATION_FILE_DRAG_BEGIN: {
+			set_modulate(Color(3, 3, 3));
+		} break;
+
+		case NOTIFICATION_FILE_DRAG_END: {
+			set_modulate(Color(1, 1, 1));
+		} break;
+
 		case NOTIFICATION_PROCESS: {
 			if (EditorFileSystem::get_singleton()->is_scanning()) {
 				scanning_progress->set_value(EditorFileSystem::get_singleton()->get_scanning_progress() * 100);
@@ -598,6 +609,14 @@ void FileSystemDock::_notification(int p_what) {
 				_reselect_items_selected_on_drag_begin(true);
 			}
 		} break;
+
+			// case NOTIFICATION_FILE_DRAG_STARTED: {
+			// 	// modulate = Color.RED
+			// } break;
+
+			// case NOTIFICATION_FILE_DRAG_ENDED: {
+			// 	// modulate = Color.WHITE
+			// } break;
 
 		case NOTIFICATION_TRANSLATION_CHANGED:
 		case NOTIFICATION_LAYOUT_DIRECTION_CHANGED:
